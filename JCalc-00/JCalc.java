@@ -230,17 +230,19 @@ class JCalc {
 
 	public static void main(String[] args) {
 
-		boolean quit=false;
 		Scanner scanner = new Scanner(System.in);
 		String input="";
 
-		while(!quit) {
+		for(;;) {
 			System.out.print(prompt);
-			input=scanner.nextLine();
+			input=scanner.nextLine().trim();
+			if(input.isEmpty()) break;
 			ArrayList<Token> tokens=Lexer.lex(input);
 			Parser parser=new Parser(tokens);
 			System.out.println(parser.parse());
 		}
+
+		System.out.println("Bye!");
 
 	}
 
