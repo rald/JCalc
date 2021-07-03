@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Stack;
 
 
 
@@ -9,7 +10,6 @@ enum TokenType {
 	OPER_SUB,
 	OPER_MUL,
 	OPER_DIV,
-	OPER_POW,
 	PAREN_OPEN,
 	PAREN_CLOSE,
 	EOF
@@ -62,8 +62,6 @@ class Lexer {
 						tokens.add(new Token(TokenType.OPER_MUL,Character.toString(ch)));
 					} else if(ch=='/') {
 						tokens.add(new Token(TokenType.OPER_DIV,Character.toString(ch)));
-					} else if(ch=='^') {
-						tokens.add(new Token(TokenType.OPER_POW,Character.toString(ch)));
 					} else if(ch=='(') {
 						tokens.add(new Token(TokenType.PAREN_OPEN,Character.toString(ch)));
 					} else if(ch==')') {
@@ -105,8 +103,12 @@ class Lexer {
 
 class Parser {
 
+	static final int DEBUG=0;
+
 	ArrayList<Token> tokens;
 	int currentTokenIndex=0;
+	Stack<Double> stack=new Stack<Double>();
+	double d0=0,d1=0,value=0;
 
 	Parser(ArrayList<Token> tokens) {
 		this.tokens=tokens;
@@ -126,100 +128,126 @@ class Parser {
 				getToken().type==TokenType.OPER_DIV;
 	}
 
-	boolean isPowOp() {
-		return	getToken().type==TokenType.OPER_POW;
-	}
-
 	void expected(TokenType type) {
 		System.out.println(type+" expected");
 		System.exit(1);
 	}
 
 	void match(TokenType type) {
-		if(getToken().type==type) {
-			currentTokenIndex++;
-		} else {
+		if(DEBUG==1) System.out.println("match: "+type+" == "+getToken().type);
+		if(getToken().type!=type) {
 			expected(type);
 		}
+		currentTokenIndex++;
 	}
 
 	double getNum() {
+		if(DEBUG==1) System.out.print("getNum: ");
 		double value=0;
 		if(getToken().type!=TokenType.NUMBER) {
 			expected(TokenType.NUMBER);
 		}
 		value=Double.parseDouble(getToken().value);
+		if(DEBUG==1) System.out.println(value);
 		currentTokenIndex++;
 		return value;
 	}
 
-	double expr() {
-		double value=0;
-		if(isAddOp()) {
-			value=0;
-		} else {
-			value=term();
-		}
-		while(getToken().type!=TokenType.EOF && isAddOp()) {
-			switch(getToken().type) {
-				case OPER_ADD:
-					match(TokenType.OPER_ADD);
-					value+=term();
-				break;
-				case OPER_SUB:
-					match(TokenType.OPER_SUB);
-					value-=term();
-				break;
-			}
-		}
-		return value;
+	void add() {
+		if(DEBUG==1) System.out.println("add");
+		match(TokenType.OPER_ADD);
+		term();
+		d0+=stack.pop();
 	}
 
-	double term() {
-		double value=pow();
-		while(getToken().type!=TokenType.EOF && isMulOp()) {
-			switch(getToken().type) {
-				case OPER_MUL:
-					match(TokenType.OPER_MUL);
-					value*=pow();
-				break;
-				case OPER_DIV:
-					match(TokenType.OPER_DIV);
-					value/=pow();
-				break;
-			}
-		}
-		return value;
+	void sub() {
+		if(DEBUG==1) System.out.println("sub");
+		match(TokenType.OPER_SUB);
+		term();
+		d0=d0-stack.pop();
+		d0=-d0;
 	}
 
-	double pow() {
-		double value=factor();
-		while(getToken().type!=TokenType.EOF && isPowOp()) {
-			switch(getToken().type) {
-				case OPER_POW:
-					match(TokenType.OPER_POW);
-					value=Math.pow(value,factor());
-				break;
-			}
-		}
-		return value;
+	void mul() {
+		if(DEBUG==1) System.out.println("mul");
+		match(TokenType.OPER_MUL);
+		signedFactor();
+		d0*=stack.pop();
 	}
 
-	double factor() {
-		double value=0;
+	void div() {
+		if(DEBUG==1) System.out.println("div");
+		match(TokenType.OPER_DIV);
+		signedFactor();
+		d0=stack.pop()/d0;
+	}
+
+	void term() {
+		if(DEBUG==1) System.out.println("term");
+		factor();
+		term1();
+	}
+
+	void firstTerm() {
+		if(DEBUG==1) System.out.println("firstTerm");
+		signedFactor();
+		term1();
+	}
+
+	void expr() {
+		if(DEBUG==1) System.out.println("expr");
+		firstTerm();
+		while(isAddOp()) {
+			stack.push(d0);
+			switch(getToken().type) {
+				case OPER_ADD: add(); break;
+				case OPER_SUB: sub(); break;
+			}
+		}
+	}
+
+	void term1() {
+		if(DEBUG==1) System.out.println("term");
+		while(isMulOp()) {
+			stack.push(d0);
+			switch(getToken().type) {
+				case OPER_MUL: mul(); break;
+				case OPER_DIV: div(); break;
+			}
+		}
+	}
+
+	void factor() {
+		if(DEBUG==1) System.out.println("factor");
 		if(getToken().type==TokenType.PAREN_OPEN) {
 			match(TokenType.PAREN_OPEN);
-			value=expr();
+			expr();
 			match(TokenType.PAREN_CLOSE);
 		} else {
-			value=getNum();
+			d0=getNum();
 		}
-		return value;
+	}
+
+	void signedFactor() {
+		if(DEBUG==1) System.out.println("signedFactor");
+		int sign=1;
+		while(isAddOp()) {
+			switch(getToken().type) {
+				case OPER_ADD: match(TokenType.OPER_ADD); sign*=+1; break;
+				case OPER_SUB: match(TokenType.OPER_SUB); sign*=-1; break;
+			}
+		}
+		factor();
+		d0*=sign;
 	}
 
 	double parse() {
-		return expr();
+		if(DEBUG==1) System.out.println("parse");
+		expr();
+		match(TokenType.EOF);
+		return d0;
 	}
+
 }
 
 
