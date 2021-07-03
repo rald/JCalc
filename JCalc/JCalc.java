@@ -1,4 +1,3 @@
-
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Stack;
@@ -220,20 +219,6 @@ class Parser {
 			}
 		}
 	}
-
-/*
-	void power() {
-		if(DEBUG==1) System.out.println("term");
-		factor();
-		power1();
-	}
-
-	void firstPower() {
-		if(DEBUG==1) System.out.println("firstTerm");
-		signedFactor();
-		power1();
-	}
-*/
 
 	void power() {
 		if(DEBUG==1) System.out.println("power");
