@@ -106,7 +106,7 @@ class Lexer {
 
 class Parser {
 
-	static final int DEBUG=0;
+	static final int DEBUG=1;
 
 	ArrayList<Token> tokens;
 	int currentTokenIndex=0;
@@ -141,7 +141,7 @@ class Parser {
 	}
 
 	void match(TokenType type) {
-		if(DEBUG==1) System.out.println("match: "+type+" == "+getToken().type);
+		if(JCalc.DEBUG==1) System.out.println("match: "+type+" == "+getToken().type);
 		if(getToken().type!=type) {
 			expected(type);
 		}
@@ -149,67 +149,60 @@ class Parser {
 	}
 
 	double getNum() {
-		if(DEBUG==1) System.out.print("getNum: ");
+		if(JCalc.DEBUG==1) System.out.print("getNum: ");
 		double value=0;
 		if(getToken().type!=TokenType.NUMBER) {
 			expected(TokenType.NUMBER);
 		}
 		value=Double.parseDouble(getToken().value);
-		if(DEBUG==1) System.out.println(value);
+		if(JCalc.DEBUG==1) System.out.println(value);
 		currentTokenIndex++;
 		return value;
 	}
 
 	void add() {
-		if(DEBUG==1) System.out.println("add");
+		if(JCalc.DEBUG==1) System.out.println("add");
 		match(TokenType.OPER_ADD);
 		term();
 		d0+=stack.pop();
 	}
 
 	void sub() {
-		if(DEBUG==1) System.out.println("sub");
+		if(JCalc.DEBUG==1) System.out.println("sub");
 		match(TokenType.OPER_SUB);
 		term();
-		d0=d0-stack.pop();
-		d0=-d0;
+		d0=stack.pop()-d0;
 	}
 
 	void mul() {
-		if(DEBUG==1) System.out.println("mul");
+		if(JCalc.DEBUG==1) System.out.println("mul");
 		match(TokenType.OPER_MUL);
 		power();
 		d0*=stack.pop();
 	}
 
 	void div() {
-		if(DEBUG==1) System.out.println("div");
+		if(JCalc.DEBUG==1) System.out.println("div");
 		match(TokenType.OPER_DIV);
 		power();
 		d0=stack.pop()/d0;
 	}
 
 	void pow() {
-		if(DEBUG==1) System.out.println("pow");
+		if(JCalc.DEBUG==1) System.out.println("pow");
 		match(TokenType.OPER_POW);
 		factor();
 		d0=Math.pow(stack.pop(),d0);
 	}
 
 	void term() {
-		if(DEBUG==1) System.out.println("term");
-		factor();
-		term1();
-	}
-
-	void firstTerm() {
-		if(DEBUG==1) System.out.println("firstTerm");
+		if(JCalc.DEBUG==1) System.out.println("term");
 		signedFactor();
 		term1();
 	}
 
 	void term1() {
-		if(DEBUG==1) System.out.println("term1");
+		if(JCalc.DEBUG==1) System.out.println("term1");
 		power();
 		while(isMulOp()) {
 			stack.push(d0);
@@ -221,7 +214,7 @@ class Parser {
 	}
 
 	void power() {
-		if(DEBUG==1) System.out.println("power");
+		if(JCalc.DEBUG==1) System.out.println("power");
 		while(isPowOp()) {
 			stack.push(d0);
 			switch(getToken().type) {
@@ -231,8 +224,8 @@ class Parser {
 	}
 
 	void expr() {
-		if(DEBUG==1) System.out.println("expr");
-		firstTerm();
+		if(JCalc.DEBUG==1) System.out.println("expr");
+		term();
 		while(isAddOp()) {
 			stack.push(d0);
 			switch(getToken().type) {
@@ -243,7 +236,7 @@ class Parser {
 	}
 
 	void factor() {
-		if(DEBUG==1) System.out.println("factor");
+		if(JCalc.DEBUG==1) System.out.println("factor");
 		if(getToken().type==TokenType.PAREN_OPEN) {
 			match(TokenType.PAREN_OPEN);
 			expr();
@@ -254,7 +247,7 @@ class Parser {
 	}
 
 	void signedFactor() {
-		if(DEBUG==1) System.out.println("signedFactor");
+		if(JCalc.DEBUG==1) System.out.println("signedFactor");
 		int sign=1;
 		while(isAddOp()) {
 			switch(getToken().type) {
@@ -267,7 +260,7 @@ class Parser {
 	}
 
 	double parse() {
-		if(DEBUG==1) System.out.println("parse");
+		if(JCalc.DEBUG==1) System.out.println("parse");
 		expr();
 		match(TokenType.EOF);
 		return d0;
@@ -278,6 +271,8 @@ class Parser {
 
 
 class JCalc {
+
+	static final int DEBUG=1;
 
 	static String prompt="JCalc> ";
 
@@ -292,8 +287,10 @@ class JCalc {
 			if(input.isEmpty()) break;
 			ArrayList<Token> tokens=Lexer.lex(input);
 
-			for(int i=0;i<tokens.size();i++) {
-				System.out.println(i+" "+tokens.get(i));
+			if(JCalc.DEBUG==1) {
+				for(int i=0;i<tokens.size();i++) {
+					System.out.println(i+" "+tokens.get(i));
+				}
 			}
 
 			Parser parser=new Parser(tokens);
