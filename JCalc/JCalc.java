@@ -106,7 +106,7 @@ class Lexer {
 
 class Parser {
 
-	static final int DEBUG=1;
+	static final int DEBUG=0;
 
 	ArrayList<Token> tokens;
 	int currentTokenIndex=0;
