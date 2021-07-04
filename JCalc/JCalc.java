@@ -177,14 +177,14 @@ class Parser {
 	void mul() {
 		if(JCalc.DEBUG==1) System.out.println("mul");
 		match(TokenType.OPER_MUL);
-		power();
+		expo();
 		d0*=stack.pop();
 	}
 
 	void div() {
 		if(JCalc.DEBUG==1) System.out.println("div");
 		match(TokenType.OPER_DIV);
-		power();
+		expo();
 		d0=stack.pop()/d0;
 	}
 
@@ -203,7 +203,7 @@ class Parser {
 
 	void term1() {
 		if(JCalc.DEBUG==1) System.out.println("term1");
-		power();
+		expo();
 		while(isMulOp()) {
 			stack.push(d0);
 			switch(getToken().type) {
@@ -213,7 +213,7 @@ class Parser {
 		}
 	}
 
-	void power() {
+	void expo() {
 		if(JCalc.DEBUG==1) System.out.println("power");
 		while(isPowOp()) {
 			stack.push(d0);
@@ -269,12 +269,27 @@ class Parser {
 }
 
 
+class Test {
+	String description;
+	String question;
+	Double answer;
+
+	Test(String description,String question,Double answer) {
+		this.description=description;
+		this.question=question;
+		this.answer=answer;
+	}
+}
+
 
 class JCalc {
 
-	static final int DEBUG=1;
+	static final int DEBUG=0;
 
 	static String prompt="JCalc> ";
+
+	static ArrayList<Test> tests = new ArrayList<Test>();
+
 
 	public static void main(String[] args) {
 
@@ -282,6 +297,7 @@ class JCalc {
 		String input="";
 
 		for(;;) {
+
 			System.out.print(prompt);
 			input=scanner.nextLine().trim();
 			if(input.isEmpty()) break;
